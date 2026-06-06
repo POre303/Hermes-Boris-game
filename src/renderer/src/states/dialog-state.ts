@@ -48,26 +48,27 @@ export class DialogState implements GameState {
     c.textBaseline = 'top';
     c.textAlign = 'left';
 
-    // Speaker name.
+    // Speaker name (12px = 1:1 with font source, pixel-perfect).
     c.fillStyle = name;
-    c.font = 'bold 10px monospace';
-    c.fillText(line.speaker, 8, DIALOG_BOX_Y + 6);
+    c.font = 'bold 12px "fusion-pixel", monospace';
+    c.fillText(line.speaker, 8, DIALOG_BOX_Y + 4);
 
     // Text body. Word-wrap on whitespace; Chinese chars count as 1 word each
-    // and break anywhere.
+    // and break anywhere. 12px CJK = ~12px wide, 36 chars ≈ 432px, fits in
+    // 480px canvas with 8px padding either side.
     c.fillStyle = fg;
-    c.font = '10px monospace';
-    const lines = wrapText(line.text, 44);
+    c.font = '12px "fusion-pixel", monospace';
+    const lines = wrapText(line.text, 36);
     let y = DIALOG_BOX_Y + 22;
     for (const ln of lines) {
       c.fillText(ln, 8, y);
       y += 14;
     }
 
-    // Advance prompt.
+    // Advance prompt (8px for compact UI text).
     c.fillStyle = dim;
     c.textAlign = 'right';
-    c.font = '8px monospace';
+    c.font = '8px "fusion-pixel", monospace';
     c.fillText(`▶ (${i + 1}/${SCRIPT.length})`, INTERNAL_WIDTH - 8, INTERNAL_HEIGHT - 10);
   }
 

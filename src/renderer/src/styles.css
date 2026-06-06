@@ -18,7 +18,12 @@ body {
   padding: 0;
   background: #000;
   color: #fcfcfc;
-  font-family: monospace;
+  /* fusion-pixel = CJK + Latin pixel font (OFL-1.1 + MIT, TakWolf).
+     Monospace fallback for any glyph missing from the subset. */
+  font-family: 'fusion-pixel', monospace;
+  /* Pixel fonts need integer line-height and no subpixel smoothing. */
+  line-height: 1;
+  -webkit-font-smoothing: none;
   overflow: hidden;
 }
 

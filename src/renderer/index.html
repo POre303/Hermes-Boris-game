@@ -8,6 +8,29 @@
     />
     <title>Hermes &amp; Boris</title>
     <link rel="stylesheet" href="./src/styles.css" />
+    <style>
+      /* CJK + Latin pixel font subset (fusion-pixel-font 12px proportional).
+         Source: https://github.com/TakWolf/fusion-pixel-font (OFL-1.1 + MIT).
+         See assets/font/CREDITS.txt for full attribution. */
+      @font-face {
+        font-family: 'fusion-pixel';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url('./assets/font/fusion-pixel-12px-proportional-subset.woff2') format('woff2');
+        unicode-range:
+          /* ASCII printable */
+          U+0020-007F,
+          /* CJK Unified Ideographs 主区（GB2312 一级覆盖） */
+          U+4E00-9FA5,
+          /* CJK 标点 / 全角 */
+          U+3000-303F,
+          U+FF00-FFEF,
+          /* 通用标点 */
+          U+2010-205F,
+          U+25A0-25FF;
+      }
+    </style>
   </head>
   <body>
     <canvas id="game-canvas" width="480" height="270"></canvas>
