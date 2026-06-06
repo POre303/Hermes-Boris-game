@@ -1,7 +1,12 @@
 node_modules/
 dist/
+out/
+release/
+coverage/
 .verify/
+.vite/
 *.log
+*.tsbuildinfo
 .DS_Store
 *.aseprite
 assets/sprites/*.aseprite

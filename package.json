@@ -3,17 +3,29 @@
   "version": "0.1.0",
   "description": "纯文字 + 16-bit 视觉像素风格 Windows 独立游戏",
   "type": "module",
+  "main": "out/main/index.js",
   "scripts": {
-    "dev": "echo \"TODO: 启动游戏\"",
-    "build": "echo \"TODO: 打包构建\"",
-    "test": "echo \"TODO: 跑测试\"",
-    "test:e2e": "echo \"TODO: 端到端测试\"",
-    "format": "biome format --write .",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "typecheck": "tsc -b",
     "lint": "biome lint .",
-    "typecheck": "tsc --noEmit"
+    "format": "biome format --write .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "test": "echo \"TODO: 跑测试\"",
+    "test:e2e": "echo \"TODO: 端到端测试\""
   },
+  "dependencies": {},
   "devDependencies": {
-    "@biomejs/biome": "^1.9.0",
-    "typescript": "^5.6.0"
+    "@biomejs/biome": "^1.9.4",
+    "@types/node": "^22.10.5",
+    "electron": "^33.3.0",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "happy-dom": "^15.11.7",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
   }
 }

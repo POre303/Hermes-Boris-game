@@ -1,0 +1,22 @@
+{
+  "name": "hermes-boris-nes-16",
+  "description": "16-color NES-style palette for the game. Index 0 is always background black, index 1 always text white.",
+  "colors": [
+    { "name": "black", "hex": "#000000" },
+    { "name": "white", "hex": "#fcfcfc" },
+    { "name": "light-gray", "hex": "#bcbcbc" },
+    { "name": "dark-gray", "hex": "#7c7c7c" },
+    { "name": "red", "hex": "#f83800" },
+    { "name": "dark-red", "hex": "#a40020" },
+    { "name": "orange", "hex": "#f87858" },
+    { "name": "yellow", "hex": "#fce0a8" },
+    { "name": "olive", "hex": "#7c5800" },
+    { "name": "green", "hex": "#00b800" },
+    { "name": "dark-green", "hex": "#005800" },
+    { "name": "teal", "hex": "#00e8d8" },
+    { "name": "blue", "hex": "#3cbcfc" },
+    { "name": "dark-blue", "hex": "#005cb8" },
+    { "name": "purple", "hex": "#6844fc" },
+    { "name": "skin", "hex": "#f0b088" }
+  ]
+}
