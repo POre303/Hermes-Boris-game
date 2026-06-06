@@ -1,7 +1,7 @@
 {
-  "name": "hermes-boris-nes-16",
-  "description": "16-color NES-style palette for the game. Index 0 is always background black, index 1 always text white.",
-  "colors": [
+  "name": "hermes-boris-palettes",
+  "description": "Default 16-color NES-style palette + per-chapter palettes. The runtime falls back to `default` for any chapter whose `by_chapter` entry is null. See docs/dev-plan-full.md section 2.5 for the 3-palette design.",
+  "default": [
     { "name": "black", "hex": "#000000" },
     { "name": "white", "hex": "#fcfcfc" },
     { "name": "light-gray", "hex": "#bcbcbc" },
@@ -18,5 +18,17 @@
     { "name": "dark-blue", "hex": "#005cb8" },
     { "name": "purple", "hex": "#6844fc" },
     { "name": "skin", "hex": "#f0b088" }
-  ]
+  ],
+  "by_chapter": {
+    "tokyo_heisei": [
+      { "name": "deep-purple", "hex": "#2d1b3d" },
+      { "name": "wine-red", "hex": "#8b2942" },
+      { "name": "wafu-cream", "hex": "#d4c5a0" },
+      { "name": "dusk-blue", "hex": "#4a5a7a" },
+      { "name": "candle-yellow", "hex": "#d4a04a" },
+      { "name": "ink-black", "hex": "#0a0a14" }
+    ],
+    "train_night": null,
+    "theatre_warm": null
+  }
 }
