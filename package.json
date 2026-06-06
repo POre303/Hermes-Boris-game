@@ -22,7 +22,7 @@
     "@biomejs/biome": "1.9.4",
     "@types/node": "^22.10.5",
     "electron": "^33.3.0",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^24.13.3",
     "electron-vite": "^2.3.0",
     "happy-dom": "^15.11.7",
     "typescript": "^5.7.2",
