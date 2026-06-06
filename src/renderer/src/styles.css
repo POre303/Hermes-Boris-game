@@ -20,7 +20,7 @@ body {
   color: #fcfcfc;
   /* fusion-pixel = CJK + Latin pixel font (OFL-1.1 + MIT, TakWolf).
      Monospace fallback for any glyph missing from the subset. */
-  font-family: 'fusion-pixel', monospace;
+  font-family: "fusion-pixel", monospace;
   /* Pixel fonts need integer line-height and no subpixel smoothing. */
   line-height: 1;
   -webkit-font-smoothing: none;

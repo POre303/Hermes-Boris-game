@@ -74,7 +74,9 @@ export const CHAPTER_PALETTES: Readonly<Partial<Record<ChapterPaletteKey, readon
  * when the key is unknown, null/undefined, or the chapter has no entry yet
  * (e.g. `train_night` / `theatre_warm` until Phase 2-3).
  */
-export function getChapterPaletteHex(key: ChapterPaletteKey | string | null | undefined): readonly string[] {
+export function getChapterPaletteHex(
+  key: ChapterPaletteKey | string | null | undefined,
+): readonly string[] {
   if (key != null && typeof key === 'string') {
     const colors = CHAPTER_PALETTES[key as ChapterPaletteKey];
     if (colors) return colors;
