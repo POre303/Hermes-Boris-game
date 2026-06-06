@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.verify/
+*.log
+.DS_Store
+*.aseprite
+assets/sprites/*.aseprite

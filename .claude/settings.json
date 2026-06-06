@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -Command \"$path = $env:CLAUDE_TOOL_INPUT_FILE_PATH; if ($path -match '\\.(ts|tsx|js|jsx)$') { pnpm biome format --write $path 2>$null }\""
+          }
+        ]
+      }
+    ]
+  }
+}
