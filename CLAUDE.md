@@ -112,3 +112,4 @@ Hermes-Boris-game/
 - [2026-06-06] vitest happy-dom 15 不实现 `CanvasRenderingContext2D`（`getContext('2d')` 返回 null）；测试必须注入 Proxy mock，不能依赖 DOM
 - [2026-06-06] 测试 mock 暴露的 `__press` / `__pressed` 等辅助方法，类型上必须把 `ctx.input` 扩成 `MockInput`（extends `InputSnapshot`）；直接当 `InputSnapshot` 用会 TS2339
 - [2026-06-06] 对话/动画测试要"按帧推进"：state 内部时钟 + `update(ctx, dtMs)` 多次调用，再 `exit()` 拿决策；不要把 `exit` 当一次性接口
+- [2026-06-06] **CI 教训**：`actions/checkout@v4` 的 `autocrlf: false` 参数是 **no-op**（v3 → v4 已重写）。windows-latest runner 的 git 全局 `core.autocrlf=true` **会覆盖** checkout 行为，文件仍然被转 CRLF。要真正控制 line ending 必须用 **`.gitattributes` 文件**（`*.ts text eol=lf` / `* text=auto eol=lf`）。诊断走错路：从"加个参数试试"开始 → 浪费 1 个无效 commit → 抓真实 CI log 才看出根因。教训：**加 workflow 参数前先查当前主版本文档**
