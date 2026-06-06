@@ -45,7 +45,7 @@ export const createMainWindow = (): BrowserWindow => {
   });
 
   // electron-vite sets ELECTRON_RENDERER_URL in dev mode; in prod, load the built file.
-  const devServerUrl = process.env['ELECTRON_RENDERER_URL'];
+  const devServerUrl = process.env.ELECTRON_RENDERER_URL;
   if (devServerUrl) {
     void win.loadURL(devServerUrl);
   } else {

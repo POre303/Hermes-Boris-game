@@ -49,4 +49,6 @@ const loop = new GameLoop(machine);
 loop.start();
 
 const bridgeVersion = window.hermesBoris?.version ?? 'unknown';
-console.info(`[hermes-boris] renderer booted; bridge version=${bridgeVersion}; state=${machine.getCurrent().id}`);
+console.info(
+  `[hermes-boris] renderer booted; bridge version=${bridgeVersion}; state=${machine.getCurrent().id}`,
+);

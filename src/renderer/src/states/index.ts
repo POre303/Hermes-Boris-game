@@ -20,8 +20,10 @@ const factories: StateFactories = {
   'game-over': () => new GameOverState(),
 };
 
-export const createStateMachine = (ctx: StateContext, initial: GameStateId = 'title'): StateMachine =>
-  new StateMachine(factories, ctx, initial);
+export const createStateMachine = (
+  ctx: StateContext,
+  initial: GameStateId = 'title',
+): StateMachine => new StateMachine(factories, ctx, initial);
 
 export { TitleState } from './title-state';
 export { MainMenuState } from './main-menu-state';

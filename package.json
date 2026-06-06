@@ -13,7 +13,8 @@
     "format": "biome format --write .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "test": "echo \"TODO: 跑测试\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:e2e": "echo \"TODO: 端到端测试\""
   },
   "dependencies": {},

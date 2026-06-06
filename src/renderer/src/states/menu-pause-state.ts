@@ -39,11 +39,7 @@ export class MenuPauseState implements GameState {
   }
 
   exit(ctx: StateContext): NextState {
-    if (
-      ctx.input.consume('Escape') ||
-      ctx.input.consume('Space') ||
-      ctx.input.consume('Enter')
-    ) {
+    if (ctx.input.consume('Escape') || ctx.input.consume('Space') || ctx.input.consume('Enter')) {
       return 'game';
     }
     return null;

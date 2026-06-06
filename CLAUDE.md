@@ -97,3 +97,18 @@ Hermes-Boris-game/
 
 - [2026-06-07] 初始化：先有这个文件，再迭代内容
 - [2026-06-07] setup.ps1 的 PowerShell heredoc `@'...'@` 在内容含 `- [...]` 行时会被解析成参数；下次写脚本改用 `[System.IO.File]::WriteAllText` 或拆成多个小段
+- [2026-06-06] pnpm 11 把 `pnpm.onlyBuiltDependencies` 从 `package.json` 移除，必须改写进 `pnpm-workspace.yaml` 的 `allowBuilds` 块（新键名），或在 `.npmrc` 用其他机制；写到 `package.json#pnpm` 会被忽略并打 WARN
+- [2026-06-06] pnpm 11 对 native 包（electron、esbuild、@biomejs/biome）的 postinstall 加了硬性 "approve builds" 关卡；不批准就直接 exit 1，必须配 `allowBuilds` 才放行
+- [2026-06-06] electron 二进制在 GitHub Releases 直连经常 `ECONNRESET`（沙盒/国内网络），`.npmrc` 加 `electron_mirror=https://npmmirror.com/mirrors/electron/` 后秒下；这是中国开发者必加
+- [2026-06-06] electron-builder 25 拉了 `app-builder-bin@5.0.0-alpha.10` 上来，在 Windows 上跑 `process failed ERR_ELECTRON_BUILDER_CANNOT_EXECUTE`；CI 用 `--dir` 暂时跳不过，疑似 pnpm 提升解析问题；考虑降级到 electron-builder 24 或固定 app-builder-bin
+- [2026-06-06] `pnpm pack` 是 pnpm 内置的 npm pack 命令（打 tarball），不是 `package.json#scripts.pack`；要跑自定义脚本必须用 `pnpm run pack`
+- [2026-06-06] 相对路径深度 off-by-one：`src/renderer/src/main.ts` 到 `src/shared/` 是 `../../shared`，但 `src/renderer/src/states/*.ts` 是 `../../../shared`（多一层）；`palette.ts` 同理要对 `../../../../assets/...`，而 `dialog-state.ts` 也是 `../../../../assets/text/...`，容易抄错
+- [2026-06-06] web tsconfig 不包含 Node 类型，`NodeJS.Platform` 命名空间不能直接用；要导出共享 API 类型必须用字面量联合类型（`'win32' | 'darwin' | ...`）而不是 `NodeJS.Platform`
+- [2026-06-06] `import x from './foo.json'` 在 web tsconfig 下需要 `.d.ts` 声明 `declare module '*.json'`；否则 `Cannot find module`
+- [2026-06-06] `Proxy({} as T, handler)` 不满足 TS2740（缺一堆属性），必须 `as unknown as T` 中转
+- [2026-06-06] biome `lint/style/noCommaOperator` 禁止 `(a, b)` 形式；侧效一句话能展开就展开，不能就用 `if/else`
+- [2026-06-06] biome `lint/complexity/useLiteralKeys` 禁止 `process.env['FOO']`；直接写 `process.env.FOO`（TS 的 noPropertyAccessFromIndexSignature 规则需要单独管）
+- [2026-06-06] `.claude/settings.json` 用 CRLF 换行，biome format 跑一遍会试图改成 LF，CI 上 `biome format .` 会 fail；把 `.claude/**` 加到 `biome.json#files.ignore` 才能过
+- [2026-06-06] vitest happy-dom 15 不实现 `CanvasRenderingContext2D`（`getContext('2d')` 返回 null）；测试必须注入 Proxy mock，不能依赖 DOM
+- [2026-06-06] 测试 mock 暴露的 `__press` / `__pressed` 等辅助方法，类型上必须把 `ctx.input` 扩成 `MockInput`（extends `InputSnapshot`）；直接当 `InputSnapshot` 用会 TS2339
+- [2026-06-06] 对话/动画测试要"按帧推进"：state 内部时钟 + `update(ctx, dtMs)` 多次调用，再 `exit()` 拿决策；不要把 `exit` 当一次性接口
