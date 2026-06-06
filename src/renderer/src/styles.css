@@ -1,0 +1,37 @@
+:root {
+  --internal-w: 480px;
+  --internal-h: 270px;
+  --scale: 3;
+  --scaled-w: calc(var(--internal-w) * var(--scale));
+  --scaled-h: calc(var(--internal-h) * var(--scale));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: #fcfcfc;
+  font-family: monospace;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#game-canvas {
+  width: var(--scaled-w);
+  height: var(--scaled-h);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #000;
+  display: block;
+}
