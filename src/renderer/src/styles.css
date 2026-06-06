@@ -16,12 +16,19 @@ html,
 body {
   margin: 0;
   padding: 0;
-  width: 100%;
-  height: 100%;
   background: #000;
   color: #fcfcfc;
   font-family: monospace;
   overflow: hidden;
+}
+
+/* Title / game viewport: vertically + horizontally centered.
+   `min-height: 100vh` is more reliable than `height: 100%` because vh is
+   measured against the viewport directly, not propagated through ancestors.
+   Only `body` is a flex container — making `html` flex turns `body` into a
+   flex item, which has surprising sizing rules. */
+body {
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
