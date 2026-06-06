@@ -1,22 +1,106 @@
+import demoScriptJson from '../../../../assets/text/demo-script.json';
+import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '../../../shared/constants';
 import type { GameState, NextState, StateContext } from '../core/state';
 
-/** Dialog overlay — skeleton (commit 3). Logic filled in commit 4. */
+type ScriptLine = { speaker: string; text: string };
+
+const SCRIPT: readonly ScriptLine[] = demoScriptJson as ScriptLine[];
+
+const STORE_LINE_INDEX = 'dialogLineIndex';
+const DIALOG_BOX_X = 0;
+const DIALOG_BOX_Y = 195;
+const DIALOG_BOX_W = INTERNAL_WIDTH;
+const DIALOG_BOX_H = INTERNAL_HEIGHT - DIALOG_BOX_Y;
+
+/** Dialog overlay — bottom-of-screen box with speaker + text. */
 export class DialogState implements GameState {
   readonly id = 'dialog' as const;
 
-  enter(_ctx: StateContext): void {
-    // TODO(commit-4): load demo script, init line index + char timer.
+  enter(ctx: StateContext): void {
+    ctx.store.set(STORE_LINE_INDEX, 0);
   }
 
   update(_ctx: StateContext, _dtMs: number): void {
-    // TODO(commit-4): type-out animation; Space/Enter advances.
+    // Type-out animation deferred to a future commit; we show the full line.
   }
 
-  render(_ctx: StateContext): void {
-    // TODO(commit-4): draw dialog box + speaker + typed text.
+  render(ctx: StateContext): void {
+    const i = (ctx.store.get(STORE_LINE_INDEX) as number | undefined) ?? 0;
+    const line = SCRIPT[i] ?? { speaker: '', text: '' };
+
+    const c = ctx.ctx2d;
+    const bg = ctx.palette[0] ?? '#000000';
+    const fg = ctx.palette[1] ?? '#ffffff';
+    const dim = ctx.palette[3] ?? '#7c7c7c';
+    const name = ctx.palette[4] ?? '#f83800';
+
+    // Dim the scene behind the dialog box.
+    c.fillStyle = bg;
+    c.fillRect(0, 0, INTERNAL_WIDTH, DIALOG_BOX_Y);
+
+    // Dialog box.
+    c.fillStyle = bg;
+    c.fillRect(DIALOG_BOX_X, DIALOG_BOX_Y, DIALOG_BOX_W, DIALOG_BOX_H);
+    c.strokeStyle = fg;
+    c.lineWidth = 1;
+    c.strokeRect(DIALOG_BOX_X + 0.5, DIALOG_BOX_Y + 0.5, DIALOG_BOX_W - 1, DIALOG_BOX_H - 1);
+
+    c.textBaseline = 'top';
+    c.textAlign = 'left';
+
+    // Speaker name.
+    c.fillStyle = name;
+    c.font = 'bold 10px monospace';
+    c.fillText(line.speaker, 8, DIALOG_BOX_Y + 6);
+
+    // Text body. Word-wrap on whitespace; Chinese chars count as 1 word each
+    // and break anywhere.
+    c.fillStyle = fg;
+    c.font = '10px monospace';
+    const lines = wrapText(line.text, 44);
+    let y = DIALOG_BOX_Y + 22;
+    for (const ln of lines) {
+      c.fillText(ln, 8, y);
+      y += 14;
+    }
+
+    // Advance prompt.
+    c.fillStyle = dim;
+    c.textAlign = 'right';
+    c.font = '8px monospace';
+    c.fillText(`▶ (${i + 1}/${SCRIPT.length})`, INTERNAL_WIDTH - 8, INTERNAL_HEIGHT - 10);
   }
 
-  exit(_ctx: StateContext): NextState {
+  exit(ctx: StateContext): NextState {
+    if (!ctx.input.consume('Space') && !ctx.input.consume('Enter')) {
+      return null;
+    }
+    const i = (ctx.store.get(STORE_LINE_INDEX) as number | undefined) ?? 0;
+    if (i + 1 >= SCRIPT.length) {
+      return 'game';
+    }
+    ctx.store.set(STORE_LINE_INDEX, i + 1);
     return null;
   }
 }
+
+/** Wrap a string into lines that fit within `maxChars` columns. */
+const wrapText = (text: string, maxChars: number): string[] => {
+  if (text.length <= maxChars) return [text];
+  const lines: string[] = [];
+  let buf = '';
+  for (const ch of text) {
+    if (ch === '\n') {
+      lines.push(buf);
+      buf = '';
+      continue;
+    }
+    buf += ch;
+    if (buf.length >= maxChars) {
+      lines.push(buf);
+      buf = '';
+    }
+  }
+  if (buf.length > 0) lines.push(buf);
+  return lines;
+};
