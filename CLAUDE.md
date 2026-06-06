@@ -28,6 +28,28 @@
 - ❌ 不要在主分支直接 push（必须 PR）
 - ❌ 不要用 `--dangerously-skip-permissions`
 
+## 主题约束（2026-06-07 sprint-week1 锁定）
+
+> 主题 = 都市传说 + 平成泡沫经济（完全抄黑森町绮谭）
+
+- ❌ 不做战斗 / 技能 / 装备
+- ❌ 不做开放世界 / 沙盒
+- ❌ 不做多结局分支（只做"普通结局 + 真结局"两版）
+- ✅ 主题 = 都市传说 + 平成泡沫经济（完全抄黑森町绮谭）
+- ✅ 剧本走 **YAML 化**（不用 JSON，不用硬编码）
+- ✅ 谜题 = **L1 + L2 占 80%**（观察 + 收集），L3 几乎不用
+- ✅ 对话 **30-50 字 / 页**，不超过 3 行
+- ✅ 调色板 = 3 套按章节切，**不用单色**（详见 `docs/dev-plan-full.md` 第 2.5 节）
+- ✅ BGM = 8-12 首，**突发音效**比循环 BGM 更重要
+- ✅ 存档 = 10 槽 + 截图，每章开头自动存档
+- ✅ 防闪退 = try/catch 包裹场景切换 + 定期保存
+
+## 章节约束
+
+- 序章 15-20 分钟（无谜题，介绍主角+引导者）
+- 章节 60-90 分钟（2-3 谜题，高潮事件）
+- 尾声 15-20 分钟（真相 + 余韵 + 制作名单）
+
 ## 命名约定
 - TS/TSX：PascalCase 组件名，camelCase hooks / utils
 - 文件名：kebab-case（`game-loop.ts`、`render-pixels.ts`）
@@ -113,3 +135,8 @@ Hermes-Boris-game/
 - [2026-06-06] 测试 mock 暴露的 `__press` / `__pressed` 等辅助方法，类型上必须把 `ctx.input` 扩成 `MockInput`（extends `InputSnapshot`）；直接当 `InputSnapshot` 用会 TS2339
 - [2026-06-06] 对话/动画测试要"按帧推进"：state 内部时钟 + `update(ctx, dtMs)` 多次调用，再 `exit()` 拿决策；不要把 `exit` 当一次性接口
 - [2026-06-06] **CI 教训**：`actions/checkout@v4` 的 `autocrlf: false` 参数是 **no-op**（v3 → v4 已重写）。windows-latest runner 的 git 全局 `core.autocrlf=true` **会覆盖** checkout 行为，文件仍然被转 CRLF。要真正控制 line ending 必须用 **`.gitattributes` 文件**（`*.ts text eol=lf` / `* text=auto eol=lf`）。诊断走错路：从"加个参数试试"开始 → 浪费 1 个无效 commit → 抓真实 CI log 才看出根因。教训：**加 workflow 参数前先查当前主版本文档**
+- [2026-06-07] electron-builder 24 在 Windows 非 admin 用户下解 `winCodeSign-2.6.0.7z` 时挂：7z 要在 cache 里建 `darwin/10.12/lib/libcrypto.dylib`、`libssl.dylib` 这两个 macOS symlink，但 Windows 默认不允许非 admin 创 symlink → `cannot execute cause=exit status 2` / `ERROR: Cannot create symbolic link : 客户端没有所请求的特权`。我们只 pack win32，根本用不到 macOS signing。**3 个解法按推荐序**：(a) **Windows → Settings → For Developers → "Developer Mode" 开**（最干净，全局生效）；(b) `electron-builder.yml` 加 `win.signtoolOptions` 或环境变量 `CSC_IDENTITY_AUTO_DISCOVERY=false` 跳过 codesign 步骤；(c) 用 admin PowerShell 跑一次让 cache 解开后续就能用
+- [2026-06-07] **PowerShell heredoc 写带 `"` 的多行 commit message 会断**：`@"..."@` 块里的双引号会被 PowerShell 解析成参数边界，heredoc 提前闭合，commit message 残缺。**解法**：(1) 用 `[System.IO.File]::WriteAllText($path, $content, [System.Text.Encoding]::UTF8)` 写到 `%TEMP%\msg.txt`；(2) `git commit -F $env:TEMP\msg.txt`（**用 `-F` 而不是 `-m` 也不是 `<`**）。或者用单引号 heredoc `@'...'@`（不展开变量）也行
+- [2026-06-07] **直接写 `.git/...` 路径被 safety hook 拦**：Bash 工具对 `C:\code\Hermes-Boris-game\.git\xxx` 这种路径会拒（"危险路径"），即使只是想 cat 一下看 hook 错误。**解法**：`git -C <project_root> xxx` 或 `cd` 进项目根再操作。**通用**：任何 `.git/` 内文件操作走 git CLI 命令，不直接路径读写
+- [2026-06-07] **biome 拦非标准 CSS 属性**：`font-smooth: never` / `-moz-osx-font-smoothing: auto` 等非标准（或 vendor 前缀不完整）会被 biome lint 拒绝。**解法**：只写**完整 vendor-prefix 形式**（如 `-webkit-font-smoothing: none` + `-moz-osx-font-smoothing: grayscale`）或**完全标准属性**（如 `font-smooth` 不存在就别用）。biome 规则倾向严格 CSS spec
+- [2026-06-07] **biome format vs format --write 不一样**：`pnpm exec biome format .` 在 biome 2.x 是 **dry-run 模式**（只检查，**不写**），CI 用这个模式遇错就 exit 1。**本地修**：必须 `pnpm exec biome format --write .`（或 `biome format --write <file>`）才会真改文件。**sprint-week1 教训**：CI 报 "Formatter would have printed" → 本地无脑加 `--write` 即可，不要纠结 biome 版本（1.x 默认会写，2.x 不会）
