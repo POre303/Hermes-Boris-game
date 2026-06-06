@@ -607,7 +607,7 @@ CREDITS.md 标 AI 生成 + 模型版本
 1. ☐ 写 `docs/story/world-bible.md`（世界观 / 主角 / 引导者 / 全章节大纲）
 2. ☐ CLAUDE.md 加 4 条主题约束（一周冲刺草稿第 4 节内容）
 3. ☐ `assets/palette-tokyo-heisei.json` 新建 + `palette.json` 加 `chapter` 字段
-4. ☐ 字体换 **fusion-pixel-font**（`src/renderer/index.html` + `assets/font/fusion-pixel-font.woff2`）—— 替代 Zpix（Zpix 商用 $1000/产品，许可证不合规）
+4. ☑ 字体换 **fusion-pixel-font**（`src/renderer/index.html` + `src/renderer/assets/font/fusion-pixel-12px-proportional-subset.woff2`）—— 替代 Zpix（Zpix 商用 $1000/产品，许可证不合规）—— ✅ D1-6 done
 5. ☐ 合并 PR #2（晚间复盘）
 6. ☐ 修标题屏 flex 居中 + electron-builder 降级到 24
 7. ☐ 注册 Windows Task Scheduler 跑 auto-verify

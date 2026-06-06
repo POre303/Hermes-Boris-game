@@ -11,3 +11,5 @@ coverage/
 .DS_Store
 *.aseprite
 assets/sprites/*.aseprite
+# 临时下载 / 解压 / 字符子集化中间产物
+downloads/
