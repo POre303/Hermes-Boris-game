@@ -6,6 +6,7 @@ import type { HermesBorisApi } from '../shared/api';
 // eslint-disable-next-line import/no-unassigned-import
 import './recovery-api';
 import type { WindowAudio } from './audio-api';
+import './save-api'; // side-effect: exposes window.save
 
 /**
  * Preload script — runs in an isolated world before the renderer page loads.

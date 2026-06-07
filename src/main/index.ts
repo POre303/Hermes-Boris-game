@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import { installMainCrashHandlers, registerRecoveryIpc } from './ipc';
 import { createMainWindow } from './window';
+import { registerSaveIpc } from './save-handler';
 
 /**
  * Electron main process entry point.
@@ -31,6 +32,7 @@ const bootstrap = (): void => {
   });
 
   app.whenReady().then(() => {
+    registerSaveIpc();
     createMainWindow();
   });
 };

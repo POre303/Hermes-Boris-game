@@ -12,6 +12,7 @@
     "src/puzzle/**/*.ts",
     "src/ui/**/*.ts",
     "src/audio/**/*.ts",
+    "src/save/types.ts",
     "assets/**/*.json"
   ]
 }
