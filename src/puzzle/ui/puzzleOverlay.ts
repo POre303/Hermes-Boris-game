@@ -1,6 +1,12 @@
 import type { StateContext } from '../../renderer/src/core/state';
 import { getPuzzle, trySolve } from '../registry';
-import { handleColorPickerInput, readColorPickerInput, renderColorPicker } from './colorPicker';
+import {
+  handleColorPickerInput,
+  readColorPickerInput,
+  renderColorPicker,
+  writeColorPickerResult,
+  resetColorPickerInput,
+} from './colorPicker';
 import {
   handleL2InventoryInput,
   readL2Inventory,
@@ -77,7 +83,18 @@ export const handleActivePuzzleInput = (ctx: StateContext): boolean => {
     if (ctx.input.consume('Enter') || ctx.input.consume('Space')) {
       const sequence = readColorPickerInput(ctx, id);
       const result = trySolve(id, { sequence });
-      if (result.ok) {
+      // Persist the latest attempt so the picker can render a brief
+      // "wrong / need N more" hint. For 'wrong' attempts we also clear
+      // the working sequence so the slots reset visually — the player
+      // gets immediate feedback that their input was rejected rather
+      // than a stuck "filled but wrong" state.
+      if (!result.ok) {
+        writeColorPickerResult(ctx, id, { reason: result.reason, at: Date.now() });
+        if (result.reason === 'wrong') {
+          resetColorPickerInput(ctx, id);
+        }
+      } else {
+        writeColorPickerResult(ctx, id, { reason: 'ok', at: Date.now() });
         markPuzzleSolved(ctx, id);
         setActivePuzzleId(ctx, undefined);
         return true;

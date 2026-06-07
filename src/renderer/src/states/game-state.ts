@@ -43,28 +43,7 @@ export class GameStateImpl implements GameState {
   }
 
   private drawScene(ctx: StateContext): void {
-    const sky = ctx.palette[10] ?? '#005800'; // dark-green
-    const ground = ctx.palette[8] ?? '#7c5800'; // olive
-    const skin = ctx.palette[15] ?? '#f0b088';
-    const accent = ctx.palette[12] ?? '#3cbcfc'; // blue
-    const c = ctx.ctx2d;
-
-    c.fillStyle = sky;
-    c.fillRect(0, 0, INTERNAL_WIDTH, 180);
-    c.fillStyle = ground;
-    c.fillRect(0, 180, INTERNAL_WIDTH, INTERNAL_HEIGHT - 180);
-
-    // A simple house shape for visual interest.
-    c.fillStyle = accent;
-    c.fillRect(60, 130, 30, 50);
-    c.fillStyle = ctx.palette[5] ?? '#a40020';
-    c.fillRect(60, 120, 30, 12);
-
-    // Player sprite (8x8 skin square with a 2x2 dark-blue eye on top).
-    c.fillStyle = skin;
-    c.fillRect(PLAYER_X, PLAYER_Y, PLAYER_SIZE, PLAYER_SIZE);
-    c.fillStyle = ctx.palette[13] ?? '#005cb8';
-    c.fillRect(PLAYER_X + 2, PLAYER_Y + 2, 2, 2);
+    drawPrologueScene(ctx);
   }
 
   /**
@@ -79,3 +58,81 @@ export class GameStateImpl implements GameState {
     void ctx.audio.scene(key);
   }
 }
+
+/**
+ * Module-level scene renderer. Exported so peer states (notably
+ * `dialog-state.ts`) can paint the same sky/ground/house/lanterns/
+ * player artwork that the in-game state shows — without the dialog
+ * overlay wiping it. Before the 2026-06-07 fix, the dialog state's
+ * `render()` filled y=0..195 with the dialog-box background colour
+ * each frame, which erased the lantern row (y=60..94) the moment the
+ * state machine transitioned into the dialog state. With this helper
+ * both the game state and the dialog state paint the scene in the
+ * same order, then the dialog state overlays the bottom-of-screen
+ * dialog box on top.
+ */
+export const drawPrologueScene = (ctx: StateContext): void => {
+  const sky = ctx.palette[10] ?? '#005800'; // dark-green
+  const ground = ctx.palette[8] ?? '#7c5800'; // olive
+  const skin = ctx.palette[15] ?? '#f0b088';
+  const accent = ctx.palette[12] ?? '#3cbcfc'; // blue
+  const c = ctx.ctx2d;
+
+  c.fillStyle = sky;
+  c.fillRect(0, 0, INTERNAL_WIDTH, 180);
+  c.fillStyle = ground;
+  c.fillRect(0, 180, INTERNAL_WIDTH, INTERNAL_HEIGHT - 180);
+
+  // A simple house shape for visual interest.
+  c.fillStyle = accent;
+  c.fillRect(60, 130, 30, 50);
+  c.fillStyle = ctx.palette[5] ?? '#a40020';
+  c.fillRect(60, 120, 30, 12);
+
+  // ── Lanterns (序章 prologue_p1_lantern_color puzzle) ─────────────
+  // 4 lanterns in a row; the player must read the colour sequence
+  // left-to-right and enter it via the color picker (keys 1-4).
+  // The colours below MUST match the order in
+  // `src/puzzle/bootstrap.ts` → prologue_p1_lantern_color and the
+  // `COLOR_KEYS` ordering in `src/puzzle/ui/colorPicker.ts` (key 1
+  // picks the first colour in COLOR_KEYS, etc.).
+  const LANTERN_Y = 60;
+  const LANTERN_SIZE = 20;
+  const LANTERN_GAP = 16;
+  const LANTERN_X0 = (INTERNAL_WIDTH - (4 * LANTERN_SIZE + 3 * LANTERN_GAP)) / 2;
+  const LANTERN_COLORS = ['#d4c5a0', '#4a5a7a', '#8b2942', '#d4a04a']; // white blue red yellow
+  for (let i = 0; i < LANTERN_COLORS.length; i++) {
+    const x = LANTERN_X0 + i * (LANTERN_SIZE + LANTERN_GAP);
+    // Top cap (black)
+    c.fillStyle = '#000000';
+    c.fillRect(x - 2, LANTERN_Y - 4, LANTERN_SIZE + 4, 3);
+    // Body
+    c.fillStyle = LANTERN_COLORS[i] ?? '#888888';
+    c.fillRect(x, LANTERN_Y, LANTERN_SIZE, LANTERN_SIZE);
+    // Tassel (yellow) below
+    c.fillStyle = '#d4a04a';
+    c.fillRect(x + LANTERN_SIZE / 2 - 1, LANTERN_Y + LANTERN_SIZE, 2, 4);
+    // Outline
+    c.strokeStyle = '#000000';
+    c.lineWidth = 1;
+    c.strokeRect(x + 0.5, LANTERN_Y + 0.5, LANTERN_SIZE - 1, LANTERN_SIZE - 1);
+  }
+  // Number labels under each lantern so the player knows which key
+  // selects which colour. After the 2026-06-07 alignment pass, the
+  // key-to-colour mapping is 1=white, 2=blue, 3=red, 4=yellow
+  // (matches `src/puzzle/ui/colorPicker.ts` COLOR_KEYS).
+  c.fillStyle = ctx.palette[1] ?? '#ffffff';
+  c.font = '8px "fusion-pixel", monospace';
+  c.textAlign = 'center';
+  c.textBaseline = 'top';
+  for (let i = 0; i < 4; i++) {
+    const x = LANTERN_X0 + i * (LANTERN_SIZE + LANTERN_GAP) + LANTERN_SIZE / 2;
+    c.fillText(`[${i + 1}]`, x, LANTERN_Y + LANTERN_SIZE + 6);
+  }
+
+  // Player sprite (8x8 skin square with a 2x2 dark-blue eye on top).
+  c.fillStyle = skin;
+  c.fillRect(PLAYER_X, PLAYER_Y, PLAYER_SIZE, PLAYER_SIZE);
+  c.fillStyle = ctx.palette[13] ?? '#005cb8';
+  c.fillRect(PLAYER_X + 2, PLAYER_Y + 2, 2, 2);
+};
