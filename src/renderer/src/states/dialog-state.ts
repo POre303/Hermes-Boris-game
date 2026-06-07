@@ -119,8 +119,17 @@ export class DialogState implements GameState {
     if (getActivePuzzleId(ctx)) {
       const solvedThisFrame = handleActivePuzzleInput(ctx);
       if (solvedThisFrame) {
-        // Puzzle cleared; keep current line index so the player can read
-        // the post-solve line, then press Space/Enter to advance.
+        // Auto-advance past the line that declared the puzzle so the
+        // player lands on the post-solve acknowledgement line (e.g. the
+        // "you actually remembered the order?" line that follows the
+        // lantern marker). The marker line itself just delivered the
+        // cue; lingering on it after solve felt like a soft-lock to
+        // players who expected the dialog to keep moving.
+        const i = (ctx.store.get(STORE_LINE_INDEX) as number | undefined) ?? 0;
+        if (i + 1 < SCRIPT.length) {
+          ctx.store.set(STORE_LINE_INDEX, i + 1);
+          this.lastRenderedIndex = -1; // force re-trigger of activatePuzzleForLine
+        }
       }
       return null;
     }

@@ -65,9 +65,14 @@ const resetColorPickerInput = (ctx: StateContext, puzzleId: string): void => {
 export const handleColorPickerInput = (ctx: StateContext, puzzleId: string): string[] => {
   const seq = readColorPickerInput(ctx, puzzleId);
 
+  // Accept both the main-row digit keys (`Digit1`-`Digit4`) and the numpad
+  // equivalents (`Numpad1`-`Numpad4`) — many players on Windows reach for
+  // the numpad, and the previous version only honoured `Digit*` which
+  // stranded anyone typing on a tenkeyless / laptop.
   for (let i = 0; i < COLOR_KEYS.length; i++) {
-    const key = `Digit${i + 1}`;
-    if (ctx.input.consume(key)) {
+    const digitCode = `Digit${i + 1}`;
+    const numpadCode = `Numpad${i + 1}`;
+    if (ctx.input.consume(digitCode) || ctx.input.consume(numpadCode)) {
       const color = COLOR_KEYS[i];
       if (color) {
         writeColorPickerInput(ctx, puzzleId, [...seq, color]);

@@ -60,6 +60,44 @@ export class GameStateImpl implements GameState {
     c.fillStyle = ctx.palette[5] ?? '#a40020';
     c.fillRect(60, 120, 30, 12);
 
+    // ── Lanterns (序章 prologue_p1_lantern_color puzzle) ─────────────
+    // 4 lanterns in a row; the player must read the colour sequence
+    // left-to-right and enter it via the color picker (keys 1-4).
+    // The colours below MUST match the order in
+    // `src/puzzle/bootstrap.ts` → prologue_p1_lantern_color.
+    const LANTERN_Y = 60;
+    const LANTERN_SIZE = 20;
+    const LANTERN_GAP = 16;
+    const LANTERN_X0 = (INTERNAL_WIDTH - (4 * LANTERN_SIZE + 3 * LANTERN_GAP)) / 2;
+    const LANTERN_COLORS = ['#8b2942', '#d4c5a0', '#8b2942', '#4a5a7a']; // red white red blue
+    for (let i = 0; i < LANTERN_COLORS.length; i++) {
+      const x = LANTERN_X0 + i * (LANTERN_SIZE + LANTERN_GAP);
+      // Top cap (black)
+      c.fillStyle = '#000000';
+      c.fillRect(x - 2, LANTERN_Y - 4, LANTERN_SIZE + 4, 3);
+      // Body
+      c.fillStyle = LANTERN_COLORS[i] ?? '#888888';
+      c.fillRect(x, LANTERN_Y, LANTERN_SIZE, LANTERN_SIZE);
+      // Tassel (yellow) below
+      c.fillStyle = '#d4a04a';
+      c.fillRect(x + LANTERN_SIZE / 2 - 1, LANTERN_Y + LANTERN_SIZE, 2, 4);
+      // Outline
+      c.strokeStyle = '#000000';
+      c.lineWidth = 1;
+      c.strokeRect(x + 0.5, LANTERN_Y + 0.5, LANTERN_SIZE - 1, LANTERN_SIZE - 1);
+    }
+    // Number labels under each lantern so the player knows which key
+    // selects which colour. 1=red, 2=white, 3=blue, 4=yellow (palette order
+    // matches `src/puzzle/ui/colorPicker.ts` COLOR_KEYS).
+    c.fillStyle = ctx.palette[1] ?? '#ffffff';
+    c.font = '8px "fusion-pixel", monospace';
+    c.textAlign = 'center';
+    c.textBaseline = 'top';
+    for (let i = 0; i < 4; i++) {
+      const x = LANTERN_X0 + i * (LANTERN_SIZE + LANTERN_GAP) + LANTERN_SIZE / 2;
+      c.fillText(`[${i + 1}]`, x, LANTERN_Y + LANTERN_SIZE + 6);
+    }
+
     // Player sprite (8x8 skin square with a 2x2 dark-blue eye on top).
     c.fillStyle = skin;
     c.fillRect(PLAYER_X, PLAYER_Y, PLAYER_SIZE, PLAYER_SIZE);
