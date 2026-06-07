@@ -11,6 +11,7 @@
     "src/shared/**/*.ts",
     "src/puzzle/**/*.ts",
     "src/ui/**/*.ts",
+    "src/audio/**/*.ts",
     "assets/**/*.json"
   ]
 }

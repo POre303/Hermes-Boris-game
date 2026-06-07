@@ -3,6 +3,7 @@ import { input } from './core/input';
 import { PALETTE } from './core/palette';
 import { createStateMachine } from './states';
 import { GAME_STATE_IDS, type GameStateId, type StateContext } from './core/state';
+import { getAudioEngine } from './audio-init';
 import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '../../shared/constants';
 import { applySnapshot, checkRecoveryPrompt, serializeStore } from './boot-guard';
 import type { GameStateSnapshot } from '../../shared/types';
@@ -53,6 +54,10 @@ const ctx: StateContext = {
     console.info('[hermes-boris] quit requested');
     window.close();
   },
+  // Audio engine is created lazily — boot it now so the game state can call
+  // into it synchronously on enter(). The actual audio output waits on the
+  // first user gesture (autoplay policy).
+  audio: getAudioEngine(),
 };
 
 /**
