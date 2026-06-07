@@ -81,6 +81,7 @@ export const makeCtx = (overrides: Partial<StateContext> = {}): TestContext => {
     input,
     store,
     quit,
+    audio: null,
   };
   return {
     ...base,

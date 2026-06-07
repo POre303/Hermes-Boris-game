@@ -6,5 +6,13 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "outDir": "./out/.tsbuildinfo-web"
   },
-  "include": ["src/renderer/**/*.ts", "src/shared/**/*.ts", "assets/**/*.json"]
+  "include": [
+    "src/renderer/**/*.ts",
+    "src/shared/**/*.ts",
+    "src/puzzle/**/*.ts",
+    "src/ui/**/*.ts",
+    "src/audio/**/*.ts",
+    "src/save/types.ts",
+    "assets/**/*.json"
+  ]
 }

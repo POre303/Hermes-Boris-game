@@ -3,6 +3,8 @@
  * Transitions are decided per-frame by each state's `exit()` return value.
  */
 
+import type { AudioEngine } from '../../../audio/types';
+
 export const GAME_STATE_IDS = [
   'title',
   'main-menu',
@@ -39,6 +41,8 @@ export interface StateContext {
   readonly store: Map<string, unknown>;
   /** Triggered when a state returns QUIT_SENTINEL from exit(). */
   readonly quit: () => void;
+  /** Audio engine, or null when the Web Audio API is unavailable. */
+  readonly audio: AudioEngine | null;
 }
 
 /** A single game state. Pure peer — no stack, no nesting. */

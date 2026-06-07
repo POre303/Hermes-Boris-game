@@ -7,6 +7,8 @@
  * web tsconfig does not include Node typings — keeps the same semantic
  * without leaking Node into the renderer's type graph.
  */
+import type { GameStateSnapshot, RecoveryState } from './types';
+
 export type HermesBorisPlatform =
   | 'aix'
   | 'darwin'
@@ -24,8 +26,24 @@ export interface HermesBorisApi {
   readonly version: string;
 }
 
+/**
+ * Recovery / crash-safety surface exposed to the renderer. Backed by IPC
+ * handlers in the main process; the renderer never touches `fs` directly.
+ * See `src/main/crash-recovery.ts` for the on-disk format and `boot-guard.ts`
+ * for the renderer-side flow that consumes this.
+ */
+export interface RecoveryApi {
+  /** Persist `snapshot` as the most recent safe state. Atomic write. */
+  write(snapshot: GameStateSnapshot): Promise<void>;
+  /** Return the persisted recovery state, or `null` if none / corrupt. */
+  read(): Promise<RecoveryState | null>;
+  /** Remove the recovery file. Called on graceful exit or on user-decline. */
+  clear(): Promise<void>;
+}
+
 declare global {
   interface Window {
     readonly hermesBoris: HermesBorisApi;
+    readonly recovery?: RecoveryApi;
   }
 }

@@ -4,5 +4,17 @@
   { "speaker": "Hermes", "text": "我们要去的地方……你确定吗？" },
   { "speaker": "Boris", "text": "别怕，天亮之前我们一定回来。" },
   { "speaker": "Hermes", "text": "……好吧。我信你。" },
-  { "speaker": "Boris", "text": "走吧。森林在等我们。Press SPACE to continue." }
+  {
+    "speaker": "Boris",
+    "text": "前面那几盏灯笼好像在告诉你什么。仔细看顺序。",
+    "puzzle": "prologue_p1_lantern_color"
+  },
+  { "speaker": "Hermes", "text": "……你居然记得顺序？厉害。" },
+  { "speaker": "Boris", "text": "走吧。森林在等我们。Press SPACE to continue." },
+  {
+    "speaker": "Hermes",
+    "text": "等等。地上有鹿骨碎块……集齐三块才能开门。",
+    "puzzle": "ch1_p1_antler_collect"
+  },
+  { "speaker": "Boris", "text": "走吧，门开了。" }
 ]

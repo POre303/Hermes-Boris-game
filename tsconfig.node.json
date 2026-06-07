@@ -3,13 +3,15 @@
   "compilerOptions": {
     "composite": true,
     "types": ["node", "electron-vite/node"],
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
     "outDir": "./out/.tsbuildinfo-node"
   },
   "include": [
     "src/main/**/*.ts",
     "src/preload/**/*.ts",
+    "src/save/**/*.ts",
     "src/shared/**/*.ts",
+    "src/audio/types.ts",
     "electron.vite.config.ts"
   ]
 }

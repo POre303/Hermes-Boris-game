@@ -160,6 +160,11 @@ ffmpeg -i "$INPUT" \
 | SFX | sfx_lantern_light | ⏳ 待生成 | — | Stable Audio 2.3 |
 | SFX | sfx_bone_collect | ⏳ 待生成 | — | Stable Audio 2.3 |
 
+**D2-2 状态**：音频系统代码已就位（`src/audio/` + preload + renderer 集成），但**无 .ogg 落地**——`assets/audio/index.json` 当前是空数组 `{"tracks": []}`。`src/audio/scene.ts` 里的 `SCENE_AUDIO` 引用了上述 id，跑游戏时若 id 找不到会忽略音频（loader 抛 unknown track id，被 bgm/sfx 静默吞掉）。生成完 .ogg 后：
+1. 跑 `scripts/postprocess-audio.sh <input> <name> <bgm|sfx>`（已存在，不要改）
+2. 把 `{ "id": "<kind>/<name>", "path": "assets/audio/<kind>/<name>.ogg", "durationMs": <估算>, "loop": <true|false>, "kind": "<bgm|sfx|ui>" }` 加进 `assets/audio/index.json`
+3. 跑 `./scripts/check-audio-assets.sh`（D2-2 新增）确认全过
+
 **生成策略**：按需生成，D2 推进序章时先生成 1.1 + 1.2 + 2.1 的 5 个 SFX；D3-D4 做 Ch.1 时生成 1.3 + 2.3。
 
 ---

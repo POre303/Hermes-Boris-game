@@ -2,10 +2,15 @@ import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '../../../shared/constants';
 import type { GameState, NextState, StateContext } from '../core/state';
 
 const STORE_GAME_CLOCK = 'gameClock';
+const STORE_ACTIVE_SCENE = 'activeScene';
 const DIALOG_TRIGGER_FRAMES = 30; // ~0.5s at 60fps
 const PLAYER_X = 240;
 const PLAYER_Y = 200;
 const PLAYER_SIZE = 8;
+
+/** Default scene key for the in-game state until the chapter system sets
+ *  something more specific. */
+const DEFAULT_SCENE_KEY = 'prologue_anomaly';
 
 /** In-game scene — sky strip, ground, and an 8x8 player sprite. */
 export class GameStateImpl implements GameState {
@@ -14,6 +19,7 @@ export class GameStateImpl implements GameState {
   enter(ctx: StateContext): void {
     ctx.store.set(STORE_GAME_CLOCK, 0);
     this.drawScene(ctx);
+    this.maybePlaySceneAudio(ctx);
   }
 
   update(ctx: StateContext, _dtMs: number): void {
@@ -59,5 +65,17 @@ export class GameStateImpl implements GameState {
     c.fillRect(PLAYER_X, PLAYER_Y, PLAYER_SIZE, PLAYER_SIZE);
     c.fillStyle = ctx.palette[13] ?? '#005cb8';
     c.fillRect(PLAYER_X + 2, PLAYER_Y + 2, 2, 2);
+  }
+
+  /**
+   * Reads `store.activeScene` (or the default) and fires the scene's
+   * audio hook (bgm crossfade + sfx_on_enter). Errors and missing engine
+   * are swallowed — audio is non-critical and the game must not stall on
+   * a missing .ogg.
+   */
+  private maybePlaySceneAudio(ctx: StateContext): void {
+    if (!ctx.audio) return;
+    const key = (ctx.store.get(STORE_ACTIVE_SCENE) as string | undefined) ?? DEFAULT_SCENE_KEY;
+    void ctx.audio.scene(key);
   }
 }
