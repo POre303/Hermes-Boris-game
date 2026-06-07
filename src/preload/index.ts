@@ -1,6 +1,10 @@
 import { contextBridge } from 'electron';
 import { APP_VERSION, PRELOAD_BRIDGE_NAME } from '../shared/constants';
 import type { HermesBorisApi } from '../shared/api';
+// Side-effect import: the file calls `contextBridge.exposeInMainWorld`
+// at module-evaluation time, wiring up the `window.recovery` global.
+// eslint-disable-next-line import/no-unassigned-import
+import './recovery-api';
 
 /**
  * Preload script — runs in an isolated world before the renderer page loads.

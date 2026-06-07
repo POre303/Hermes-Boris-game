@@ -1,13 +1,24 @@
 import { GameLoop } from './core/loop';
 import { input } from './core/input';
 import { PALETTE } from './core/palette';
-import type { StateContext } from './core/state';
 import { createStateMachine } from './states';
+import { GAME_STATE_IDS, type GameStateId, type StateContext } from './core/state';
 import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '../../shared/constants';
+import { applySnapshot, checkRecoveryPrompt, serializeStore } from './boot-guard';
+import type { GameStateSnapshot } from '../../shared/types';
 
 /**
  * Renderer entry point — wires the state machine into the canvas and starts
- * the game loop. Commit 3: skeleton states; commit 4 fills in real logic.
+ * the game loop.
+ *
+ * Crash-recovery (D2-4):
+ *   1. `checkRecoveryPrompt` runs *before* the state machine is constructed
+ *      and either rehydrates `ctx.store` from a persisted snapshot or starts
+ *      fresh.
+ *   2. `onTransitioned` writes a fresh snapshot to `crash-recovery.json` on
+ *      every successful state change.
+ *   3. `window.error` / `unhandledrejection` write a "best effort" snapshot
+ *      so the next launch has something to recover from.
  */
 
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement | null;
@@ -44,11 +55,54 @@ const ctx: StateContext = {
   },
 };
 
-const machine = createStateMachine(ctx, 'title');
-const loop = new GameLoop(machine);
-loop.start();
+/**
+ * Top-level boot. The renderer is bundled by Vite, which supports
+ * top-level await for ES modules; we use it here so the state machine
+ * doesn't start before the recovery prompt is resolved.
+ */
+const boot = async (): Promise<void> => {
+  const recoveryResult = await checkRecoveryPrompt();
+  if (recoveryResult.state) {
+    applySnapshot(ctx, recoveryResult.state.lastSafeState);
+  }
 
-const bridgeVersion = window.hermesBoris?.version ?? 'unknown';
-console.info(
-  `[hermes-boris] renderer booted; bridge version=${bridgeVersion}; state=${machine.getCurrent().id}`,
-);
+  const initialId: GameStateId = ((): GameStateId => {
+    const fromRecovery = recoveryResult.state?.lastSafeState.currentStateId;
+    if (fromRecovery && (GAME_STATE_IDS as readonly string[]).includes(fromRecovery)) {
+      return fromRecovery as GameStateId;
+    }
+    return 'title';
+  })();
+  const machine = createStateMachine(ctx, initialId);
+
+  // Build a snapshot of the current state for recovery.
+  // `ctx.store` is the single source of truth for the persistable view.
+  const buildSnapshot = (id: GameStateId): GameStateSnapshot => ({
+    currentStateId: id,
+    storeEntries: serializeStore(ctx.store),
+  });
+
+  // Wire the global error handlers first so any failure during the loop's
+  // first frame still produces a recovery marker.
+  const writeCrashSnapshot = (): void => {
+    if (!window.recovery) return;
+    void window.recovery.write(buildSnapshot(machine.getCurrent().id));
+  };
+  window.addEventListener('error', writeCrashSnapshot);
+  window.addEventListener('unhandledrejection', writeCrashSnapshot);
+
+  const loop = new GameLoop(machine, {
+    onTransitioned: (id) => {
+      if (!window.recovery) return;
+      void window.recovery.write(buildSnapshot(id));
+    },
+  });
+  loop.start();
+
+  const bridgeVersion = window.hermesBoris?.version ?? 'unknown';
+  console.info(
+    `[hermes-boris] renderer booted; bridge version=${bridgeVersion}; state=${machine.getCurrent().id}; recovery=${recoveryResult.decision}`,
+  );
+};
+
+void boot();
