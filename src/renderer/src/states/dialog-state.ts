@@ -10,6 +10,7 @@ import {
   renderActivePuzzle,
   setActivePuzzleId,
 } from '../../../puzzle';
+import { drawPrologueScene } from './game-state';
 
 type ScriptLine = { speaker: string; text: string; puzzle?: string };
 
@@ -65,11 +66,17 @@ export class DialogState implements GameState {
     const dim = ctx.palette[3] ?? '#7c7c7c';
     const name = ctx.palette[4] ?? '#f83800';
 
-    // Dim the scene behind the dialog box.
-    c.fillStyle = bg;
-    c.fillRect(0, 0, INTERNAL_WIDTH, DIALOG_BOX_Y);
+    // Paint the prologue scene (sky / ground / house / lanterns / player)
+    // FIRST so the dialog box can be drawn on top of it. Before the
+    // 2026-06-07 fix this method called `c.fillRect(0, 0, INTERNAL_WIDTH,
+    // DIALOG_BOX_Y)` here, which clobbered the lantern row (y=60..94)
+    // that the in-game state had just drawn. Now the dialog state shares
+    // the same scene renderer as the in-game state and only overlays the
+    // dialog box at the bottom of the screen.
+    drawPrologueScene(ctx);
 
-    // Dialog box.
+    // Dialog box (covers the bottom of the screen; lanterns at y=60..94
+    // sit above this band and remain visible).
     c.fillStyle = bg;
     c.fillRect(DIALOG_BOX_X, DIALOG_BOX_Y, DIALOG_BOX_W, DIALOG_BOX_H);
     c.strokeStyle = fg;
