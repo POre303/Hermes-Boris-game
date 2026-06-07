@@ -1,5 +1,6 @@
 import type { StateContext } from '../../renderer/src/core/state';
 import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '../../shared/constants';
+import { getPuzzle } from '../registry';
 
 /**
  * 4-color picker overlay for L1 puzzles. Shown on top of the dialog state
@@ -43,10 +44,67 @@ const COLOR_HEX: Record<ColorKey, string> = {
 
 const inputStoreKey = (puzzleId: string): string => `${STORE_PREFIX}${puzzleId}`;
 
+/** Read the player's working input sequence for a color-picker puzzle.
+ *  Returns an empty array when the slot is unset or the stored value is
+ *  not a string array. */
 export const readColorPickerInput = (ctx: StateContext, puzzleId: string): string[] => {
   const raw = ctx.store.get(inputStoreKey(puzzleId));
   if (!Array.isArray(raw)) return [];
   return raw.filter((x): x is string => typeof x === 'string');
+};
+
+/** Result of the last solve attempt against this puzzle, used to drive
+ *  short-lived "wrong / need N more" feedback.  Read by `renderColorPicker`. */
+export interface ColorPickerLastResult {
+  readonly reason: 'wrong' | 'incomplete' | 'ok' | 'invalid-state';
+  readonly at: number;
+}
+const resultStoreKey = (puzzleId: string): string => `puzzleResult_${puzzleId}`;
+export const readColorPickerResult = (
+  ctx: StateContext,
+  puzzleId: string,
+): ColorPickerLastResult | undefined => {
+  const raw = ctx.store.get(resultStoreKey(puzzleId));
+  if (
+    raw != null &&
+    typeof raw === 'object' &&
+    'reason' in raw &&
+    'at' in raw &&
+    typeof (raw as { at: unknown }).at === 'number'
+  ) {
+    const r = raw as { reason: unknown; at: number };
+    if (
+      r.reason === 'wrong' ||
+      r.reason === 'incomplete' ||
+      r.reason === 'ok' ||
+      r.reason === 'invalid-state'
+    ) {
+      return { reason: r.reason, at: r.at };
+    }
+  }
+  return undefined;
+};
+export const writeColorPickerResult = (
+  ctx: StateContext,
+  puzzleId: string,
+  result: ColorPickerLastResult,
+): void => {
+  ctx.store.set(resultStoreKey(puzzleId), result);
+};
+export const clearColorPickerResult = (ctx: StateContext, puzzleId: string): void => {
+  ctx.store.delete(resultStoreKey(puzzleId));
+};
+
+/** Cap how long the "wrong / incomplete" feedback lingers on screen. */
+const RESULT_FEEDBACK_MS = 1500;
+
+/** Returns true while a recent wrong/incomplete result is still on screen
+ *  and should be rendered as feedback text. */
+export const isResultFeedbackActive = (ctx: StateContext, puzzleId: string): boolean => {
+  const r = readColorPickerResult(ctx, puzzleId);
+  if (!r) return false;
+  if (r.reason === 'ok') return false;
+  return Date.now() - r.at < RESULT_FEEDBACK_MS;
 };
 
 const writeColorPickerInput = (
@@ -57,13 +115,29 @@ const writeColorPickerInput = (
   ctx.store.set(inputStoreKey(puzzleId), [...seq]);
 };
 
-const resetColorPickerInput = (ctx: StateContext, puzzleId: string): void => {
+/** Drop the player's working input. Exported so the puzzle overlay can
+ *  reset the slot row when a wrong solve attempt comes back from the
+ *  solver. */
+export const resetColorPickerInput = (ctx: StateContext, puzzleId: string): void => {
   ctx.store.delete(inputStoreKey(puzzleId));
+};
+
+/** Pull the expected sequence length for an L1 puzzle from the registry.
+ *  Falls back to 4 if the registry can't find the id (defensive — picker
+ *  should never be invoked against an unknown puzzle). */
+const expectedLengthFor = (puzzleId: string): number => {
+  const p = getPuzzle(puzzleId);
+  if (p && p.type === 'L1') {
+    const sol = p.solution as { kind: 'color_sequence'; sequence: readonly string[] };
+    return sol.sequence.length;
+  }
+  return 4;
 };
 
 /** Process a single frame's input. Returns the new sequence (post-handling). */
 export const handleColorPickerInput = (ctx: StateContext, puzzleId: string): string[] => {
   const seq = readColorPickerInput(ctx, puzzleId);
+  const expectedLength = expectedLengthFor(puzzleId);
 
   // Accept both the main-row digit keys (`Digit1`-`Digit4`) and the numpad
   // equivalents (`Numpad1`-`Numpad4`) — many players on Windows reach for
@@ -73,9 +147,15 @@ export const handleColorPickerInput = (ctx: StateContext, puzzleId: string): str
     const digitCode = `Digit${i + 1}`;
     const numpadCode = `Numpad${i + 1}`;
     if (ctx.input.consume(digitCode) || ctx.input.consume(numpadCode)) {
-      const color = COLOR_KEYS[i];
-      if (color) {
-        writeColorPickerInput(ctx, puzzleId, [...seq, color]);
+      // Cap the sequence at the puzzle's expected length so a player
+      // mashing keys cannot push the picker past N slots. Extra presses
+      // are ignored silently — the UI slot row already shows all N
+      // swatches filled, so the picker stays locked at N picks.
+      if (seq.length < expectedLength) {
+        const color = COLOR_KEYS[i];
+        if (color) {
+          writeColorPickerInput(ctx, puzzleId, [...seq, color]);
+        }
       }
       return readColorPickerInput(ctx, puzzleId);
     }
@@ -166,6 +246,28 @@ export const renderColorPicker = (
   for (const line of hintLines) {
     c.fillText(line, INTERNAL_WIDTH / 2, y);
     y += 12;
+  }
+
+  // Verification feedback (wrong / incomplete). When the player has
+  // pressed Enter and the solver rejected their sequence, render a short
+  // hint explaining why so they know what to fix. The result entry in
+  // `ctx.store` carries a `Date.now()` timestamp; if the entry is older
+  // than `RESULT_FEEDBACK_MS` we drop it.
+  const lastResult = readColorPickerResult(ctx, puzzleId);
+  if (lastResult && Date.now() - lastResult.at < RESULT_FEEDBACK_MS) {
+    let msg: string | undefined;
+    if (lastResult.reason === 'wrong') {
+      msg = '顺序不对，再试一次。已自动清空。';
+    } else if (lastResult.reason === 'incomplete') {
+      msg = `还需要 ${expectedLength - seq.length} 个颜色。`;
+    }
+    if (msg) {
+      c.fillStyle = '#ff4040';
+      c.font = 'bold 10px monospace';
+      c.textAlign = 'center';
+      c.textBaseline = 'top';
+      c.fillText(msg, INTERNAL_WIDTH / 2, 178);
+    }
   }
 
   // Touch the height reference so the unused dim import is honored.
