@@ -21,8 +21,11 @@ describe('puzzle registry', () => {
 
   it('trySolve dispatches L1 to colorSequence and succeeds on the lantern puzzle', () => {
     registerSprintPuzzles();
+    // After the 2026-06-07 alignment pass, the lantern puzzle's solution
+    // sequence is [white, blue, red, yellow] (matches the visual lantern
+    // row in `src/renderer/src/states/game-state.ts`).
     const result = trySolve('prologue_p1_lantern_color', {
-      sequence: ['red', 'white', 'red', 'blue'],
+      sequence: ['white', 'blue', 'red', 'yellow'],
     });
     expect(result.ok).toBe(true);
   });

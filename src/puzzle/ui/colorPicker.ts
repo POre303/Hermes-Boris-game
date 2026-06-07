@@ -1,6 +1,7 @@
 import type { StateContext } from '../../renderer/src/core/state';
 import { INTERNAL_HEIGHT, INTERNAL_WIDTH } from '../../shared/constants';
-import { getPuzzle } from '../registry';
+import { getActivePuzzleId, getPuzzle, trySolve } from '../index';
+import { markPuzzleSolved, setActivePuzzleId } from './puzzleOverlay';
 
 /**
  * 4-color picker overlay for L1 puzzles. Shown on top of the dialog state
@@ -31,14 +32,20 @@ const SWATCH_GAP = 8;
 const SLOT_PX = 24;
 const SLOT_GAP = 4;
 
-const COLOR_KEYS = ['red', 'white', 'blue', 'yellow'] as const;
+// After the 2026-06-07 alignment pass, COLOR_KEYS is in the same order as
+// the visual lantern row in `game-state.ts`: key 1 = white, key 2 = blue,
+// key 3 = red, key 4 = yellow. The numeric answer to the lantern puzzle
+// is therefore [2, 3, 1, 4] (read: "press 2, 3, 1, 4" → white, blue,
+// red, yellow). Other L1 puzzles (postcard, signal wire) keep their own
+// solution sequences and the picker is generic over COLOR_KEYS.
+const COLOR_KEYS = ['white', 'blue', 'red', 'yellow'] as const;
 type ColorKey = (typeof COLOR_KEYS)[number];
 
-/** Tokyo-heisei mapping: token → palette hex. Wine-red / wafu-cream / etc. */
+/** Tokyo-heisei mapping: token → palette hex. Wafu-cream / dusk-blue / etc. */
 const COLOR_HEX: Record<ColorKey, string> = {
-  red: '#8b2942',
   white: '#d4c5a0',
   blue: '#4a5a7a',
+  red: '#8b2942',
   yellow: '#d4a04a',
 };
 
@@ -136,6 +143,18 @@ const expectedLengthFor = (puzzleId: string): number => {
 
 /** Process a single frame's input. Returns the new sequence (post-handling). */
 export const handleColorPickerInput = (ctx: StateContext, puzzleId: string): string[] => {
+  // Bug #3: guard against stray Backspace / KeyC / digit input when no
+  // puzzle is actually active. Without this, the keydown listener in
+  // core/input.ts records the key state, and the dialog state's exit()
+  // could leak the press into the picker code path even on non-puzzle
+  // lines (the previous implementation was technically correct because
+  // exit() only routed to this function when getActivePuzzleId() was
+  // truthy, but the explicit guard is cheap and makes the contract
+  // obvious to future readers).
+  if (!getActivePuzzleId(ctx) || getActivePuzzleId(ctx) !== puzzleId) {
+    return readColorPickerInput(ctx, puzzleId);
+  }
+
   const seq = readColorPickerInput(ctx, puzzleId);
   const expectedLength = expectedLengthFor(puzzleId);
 
@@ -147,18 +166,39 @@ export const handleColorPickerInput = (ctx: StateContext, puzzleId: string): str
     const digitCode = `Digit${i + 1}`;
     const numpadCode = `Numpad${i + 1}`;
     if (ctx.input.consume(digitCode) || ctx.input.consume(numpadCode)) {
-      // Cap the sequence at the puzzle's expected length so a player
-      // mashing keys cannot push the picker past N slots. Extra presses
-      // are ignored silently — the UI slot row already shows all N
-      // swatches filled, so the picker stays locked at N picks.
+      // Bug #2 / Bug #3: cap the sequence at the puzzle's expected
+      // length so a player mashing keys cannot push the picker past N
+      // slots. Extra presses are ignored silently — the UI slot row
+      // already shows all N swatches filled, so the picker stays locked
+      // at N picks.
       if (seq.length < expectedLength) {
         const color = COLOR_KEYS[i];
         if (color) {
           writeColorPickerInput(ctx, puzzleId, [...seq, color]);
         }
       }
+      const next = readColorPickerInput(ctx, puzzleId);
+      // Spec: "满 4 位自动校验". When the player fills the last slot,
+      // fire trySolve immediately. Wrong → reset + brief feedback;
+      // ok → solve + clear activePuzzleId so the dialog advances.
+      if (next.length === expectedLength) {
+        attemptAutoSolve(ctx, puzzleId, next);
+      }
       return readColorPickerInput(ctx, puzzleId);
     }
+  }
+
+  // Bug #3 (cont.): when the picker is at full length, Backspace is
+  // intentionally disabled so a filled answer is "locked in" — the spec
+  // treats it as a submit, not a draft. Players can still press 'C' to
+  // wipe the whole input and start over.
+  if (seq.length === expectedLength) {
+    if (ctx.input.consume('KeyC')) {
+      resetColorPickerInput(ctx, puzzleId);
+      clearColorPickerResult(ctx, puzzleId);
+      return [];
+    }
+    return seq;
   }
 
   if (ctx.input.consume('Backspace')) {
@@ -167,12 +207,38 @@ export const handleColorPickerInput = (ctx: StateContext, puzzleId: string): str
   }
 
   if (ctx.input.consume('KeyC')) {
-    // 'C' clears — escape hatch if the player picks the wrong color.
+    // 'C' clears — escape hatch if the player picks the wrong colour
+    // (or wants to abandon a half-finished attempt).
     resetColorPickerInput(ctx, puzzleId);
+    clearColorPickerResult(ctx, puzzleId);
     return [];
   }
 
+  // Bug #6: any other key (letters, digits > 4, function keys) is left
+  // untouched — the input listener still records the key state for
+  // other consumers, but the picker doesn't pretend to react to it.
+  // Whitelist enforcement: only Digit1-4 / Numpad1-4 / Backspace / KeyC
+  // / Enter / Escape reach this function via the dialog-state routing.
+
   return seq;
+};
+
+/** Fire the solver from the picker. Persists the result, clears the
+ *  working sequence on a wrong attempt, and clears `activePuzzleId` on
+ *  success. Exported via `attemptAutoSolve` so the dialog state can
+ *  reuse it for the manual Enter / Space path. */
+const attemptAutoSolve = (ctx: StateContext, puzzleId: string, seq: readonly string[]): void => {
+  const result = trySolve(puzzleId, { sequence: seq });
+  if (!result.ok) {
+    writeColorPickerResult(ctx, puzzleId, { reason: result.reason, at: Date.now() });
+    if (result.reason === 'wrong') {
+      resetColorPickerInput(ctx, puzzleId);
+    }
+    return;
+  }
+  writeColorPickerResult(ctx, puzzleId, { reason: 'ok', at: Date.now() });
+  markPuzzleSolved(ctx, puzzleId);
+  setActivePuzzleId(ctx, undefined);
 };
 
 export const renderColorPicker = (
@@ -218,13 +284,20 @@ export const renderColorPicker = (
 
   // Selected sequence slots.
   const seq = readColorPickerInput(ctx, puzzleId);
+  // Bug #5: when the last attempt was rejected, pulse the slot row red
+  // so the player has a clear "your input was wrong" signal even before
+  // the helper text renders below. (The helper text is rendered later
+  // in this function from its own `lastResult` read.)
+  const pulseResult = readColorPickerResult(ctx, puzzleId);
+  const pulseActive = pulseResult != null && Date.now() - pulseResult.at < RESULT_FEEDBACK_MS;
+  const wrongPulse = pulseActive && pulseResult?.reason === 'wrong';
   const slotRowW = expectedLength * SLOT_PX + Math.max(0, expectedLength - 1) * SLOT_GAP;
   const slotStartX = (INTERNAL_WIDTH - slotRowW) / 2;
   const slotY = 100;
   for (let i = 0; i < expectedLength; i++) {
     const x = slotStartX + i * (SLOT_PX + SLOT_GAP);
-    c.strokeStyle = dim;
-    c.lineWidth = 1;
+    c.strokeStyle = wrongPulse ? '#ff4040' : dim;
+    c.lineWidth = wrongPulse ? 2 : 1;
     c.strokeRect(x + 0.5, slotY + 0.5, SLOT_PX - 1, SLOT_PX - 1);
     const picked = seq[i];
     if (picked && (COLOR_KEYS as readonly string[]).includes(picked)) {
@@ -233,16 +306,21 @@ export const renderColorPicker = (
     }
   }
 
-  // Progress indicator.
+  // Bug #5: progress indicator — large, accent-coloured, prominent.
+  // The previous 8px dim text was easy to miss when the dialog box was
+  // busy; the new 14px accent text sits right under the slot row and
+  // gives a clear "how many more do I need?" signal.
   c.fillStyle = accent;
-  c.font = '8px monospace';
-  c.fillText(`${seq.length}/${expectedLength}`, INTERNAL_WIDTH / 2, 130);
+  c.font = 'bold 14px "fusion-pixel", monospace';
+  c.textAlign = 'center';
+  c.textBaseline = 'top';
+  c.fillText(`${seq.length} / ${expectedLength}`, INTERNAL_WIDTH / 2, 130);
 
   // Hint text.
   c.fillStyle = fg;
   c.font = '10px monospace';
   const hintLines = wrapText(hint, 60);
-  let y = 150;
+  let y = 152;
   for (const line of hintLines) {
     c.fillText(line, INTERNAL_WIDTH / 2, y);
     y += 12;

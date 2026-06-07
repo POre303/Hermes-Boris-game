@@ -14,7 +14,14 @@ import { l1Puzzle, l2Puzzle } from './types';
  */
 export const registerSprintPuzzles = (): void => {
   // ── L1: lantern color (序章灯笼) ────────────────────────────────
-  // Hermes 站在林边小屋门前，灯笼依次是「红 → 白 → 红 → 蓝」。
+  // Hermes 站在林边小屋门前，灯笼依次是「白 → 蓝 → 红 → 黄」。
+  // The colour order below MUST match the visual lantern row in
+  // `src/renderer/src/states/game-state.ts` → LANTERN_COLORS, and the
+  // `COLOR_KEYS` ordering in `src/puzzle/ui/colorPicker.ts` (key 1 = the
+  // first colour in COLOR_KEYS, etc.). After the 2026-06-07 alignment
+  // pass, key 1 = white, key 2 = blue, key 3 = red, key 4 = yellow, so
+  // the puzzle's numeric answer is [2, 3, 1, 4] (read: "press 2, 3, 1,
+  // 4" yields white, blue, red, yellow).
   registerPuzzle(
     l1Puzzle({
       id: 'prologue_p1_lantern_color',
@@ -22,7 +29,7 @@ export const registerSprintPuzzles = (): void => {
       hint: '灯笼的颜色在告诉你顺序。从左到右依次点亮。',
       solution: {
         kind: 'color_sequence',
-        sequence: ['red', 'white', 'red', 'blue'],
+        sequence: ['white', 'blue', 'red', 'yellow'],
       },
     }),
   );

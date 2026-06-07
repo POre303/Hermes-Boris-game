@@ -64,12 +64,14 @@ export class GameStateImpl implements GameState {
     // 4 lanterns in a row; the player must read the colour sequence
     // left-to-right and enter it via the color picker (keys 1-4).
     // The colours below MUST match the order in
-    // `src/puzzle/bootstrap.ts` → prologue_p1_lantern_color.
+    // `src/puzzle/bootstrap.ts` → prologue_p1_lantern_color and the
+    // `COLOR_KEYS` ordering in `src/puzzle/ui/colorPicker.ts` (key 1
+    // picks the first colour in COLOR_KEYS, etc.).
     const LANTERN_Y = 60;
     const LANTERN_SIZE = 20;
     const LANTERN_GAP = 16;
     const LANTERN_X0 = (INTERNAL_WIDTH - (4 * LANTERN_SIZE + 3 * LANTERN_GAP)) / 2;
-    const LANTERN_COLORS = ['#8b2942', '#d4c5a0', '#8b2942', '#4a5a7a']; // red white red blue
+    const LANTERN_COLORS = ['#d4c5a0', '#4a5a7a', '#8b2942', '#d4a04a']; // white blue red yellow
     for (let i = 0; i < LANTERN_COLORS.length; i++) {
       const x = LANTERN_X0 + i * (LANTERN_SIZE + LANTERN_GAP);
       // Top cap (black)
@@ -87,8 +89,9 @@ export class GameStateImpl implements GameState {
       c.strokeRect(x + 0.5, LANTERN_Y + 0.5, LANTERN_SIZE - 1, LANTERN_SIZE - 1);
     }
     // Number labels under each lantern so the player knows which key
-    // selects which colour. 1=red, 2=white, 3=blue, 4=yellow (palette order
-    // matches `src/puzzle/ui/colorPicker.ts` COLOR_KEYS).
+    // selects which colour. After the 2026-06-07 alignment pass, the
+    // key-to-colour mapping is 1=white, 2=blue, 3=red, 4=yellow
+    // (matches `src/puzzle/ui/colorPicker.ts` COLOR_KEYS).
     c.fillStyle = ctx.palette[1] ?? '#ffffff';
     c.font = '8px "fusion-pixel", monospace';
     c.textAlign = 'center';

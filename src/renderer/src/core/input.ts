@@ -39,7 +39,16 @@ const installListeners = (): void => {
   window.addEventListener('blur', onBlur);
 };
 
-installListeners();
+// Bug #1: prevent double-binding when Vite HMR re-imports this module
+// during dev. Without this guard, every hot-reload doubled the listener
+// count and one physical keypress became N internal events, scrambling
+// one-shot `consume()` semantics. The flag is module-level so the second
+// import (in the same Vite session) is a no-op.
+let installed = false;
+if (!installed) {
+  installListeners();
+  installed = true;
+}
 
 export const input: InputSnapshot = {
   isDown: (code) => {
